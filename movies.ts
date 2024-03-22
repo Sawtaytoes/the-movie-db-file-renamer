@@ -1,5 +1,5 @@
 import { readdir, rename } from 'node:fs/promises';
-import path from 'node:path';
+import { extname, sep } from 'node:path';
 import querystring from 'node:querystring';
 import {
   catchError,
@@ -37,26 +37,42 @@ from(
       .test(filename)
     )
   )),
-  // take(1),
+  // take(1), // Uncomment for debugging a single file.
   tap(() => console.info('\n')),
   tap(console.info),
-  map((filename: string) => {
-    console.info(querystring.escape(filename.replace(/(.+) \[.*$/, '$1')))
+  map((
+    filename,
+  ) => {
+    const movieName = (
+      filename
+      .replace(
+        (
+          extname(
+            filename
+          )
+        ),
+        ""
+      )
+      .replace(
+        /^(.+) \[.*$/,
+        "$1"
+      )
+    )
 
-    const url = `https://api.themoviedb.org/3/search/movie?query=${querystring.escape(filename.replace(/(.+) \[.*$/, '$1'))}&include_adult=false&language=en-US&page=1`;
+    const url = `https://api.themoviedb.org/3/search/movie?query=${querystring.escape(movieName)}&include_adult=false&language=en-US&page=1`;
 
     const options = {
-      method: 'GET',
+      method: "GET",
       headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${process.env.THEMOVIEDB_API_KEY!}`
+        accept: "application/json",
+        Authorization: `Bearer ${process.env.THEMOVIEDB_ACCESS_TOKEN!}`
       }
     };
 
     return (
       fetch(url, options)
       .then(res => res.json())
-      .then((json: MovieSearchResponse['json']) => ({
+      .then((json: MovieSearchResponse["json"]) => ({
         filename,
         json,
       }))
@@ -90,12 +106,14 @@ from(
       }),
       filter(Boolean),
       map(({ release_date }) => new Date(release_date).getFullYear()),
-      tap((releaseYear) => console.info(releaseYear, filename, json.results.at(0))),
+      // tap((releaseYear) => console.info(releaseYear, filename, json.results.at(0))), // Useful for debugging.
+      tap((releaseYear) => console.info(releaseYear, "->", filename)),
       filter((releaseYear) => !isNaN(releaseYear)),
       // tap(console.info),
       map((releaseYear => filename.replace(/(.+) \[/, `$1 (${releaseYear}) [`))),
+      tap(console.log),
       // tap(console.info),
-      map((newFilename) => rename(parentDirectory.concat(path.sep, filename), parentDirectory.concat(path.sep, newFilename))),
+      map((newFilename) => rename(parentDirectory.concat(sep, filename), parentDirectory.concat(sep, newFilename))),
       catchError((error) => {
         console.error(error)
         return EMPTY
