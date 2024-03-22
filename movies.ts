@@ -91,7 +91,6 @@ from(
     )
   }),
   mergeAll(5),
-  // toArray(),
   filter(({ filename }) => Boolean(filename)),
   map(({
     filename,
@@ -106,8 +105,8 @@ from(
       }),
       filter(Boolean),
       map(({ release_date }) => new Date(release_date).getFullYear()),
-      // tap((releaseYear) => console.info(releaseYear, filename, json.results.at(0))), // Useful for debugging.
       tap((releaseYear) => console.info(releaseYear, "->", filename)),
+      // tap(() => console.info(json.results.at(0))), // Useful for debugging.
       filter((releaseYear) => !isNaN(releaseYear)),
       // tap(console.info),
       map((releaseYear => filename.replace(/(.+) \[/, `$1 (${releaseYear}) [`))),
